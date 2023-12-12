@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="snakeCanvas" width="400" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('snakeCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const segmentSize = 20;
+        const canvasSize = 400;
+
+        let snake = [
+            { x: 5, y: 5, isHead: true },
+            { x: 4, y: 5 },
+            { x: 3, y: 5, isTail: true }
+        ];
+        let food = { x: 15, y: 15 };
+        let direction = 'right';
+        let isGameOver = false;
+
+        function draw() {
+            // Draw snake
+            for (let i = 0; i < snake.length; i++) {
+                const segment = snake[i];
+                ctx.fillStyle = '#32CD32'; // Green color for the snake
+                ctx.strokeStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(segment.x * segmentSize + segmentSize / 2, segment.y * segmentSize + segmentSize / 2, segmentSize / 2, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
+
+                if (segment.isHead) {
+                    // Draw eyes and mouth for the head
+                    const eyeSize = segmentSize / 8;
+                    const eyeOffsetX = segmentSize / 4;
+                    const eyeOffsetY = segmentSize / 5;
+                    ctx.fillStyle = '#fff'; // White color for the eyes
+                    ctx.beginPath();
+                    ctx.arc(segment.x * segmentSize + eyeOffsetX, segment.y * segmentSize + eyeOffsetY, eyeSize, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(segment.x * segmentSize - eyeOffsetX, segment.y * segmentSize + eyeOffsetY, eyeSize, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // Draw mouth
+                    ctx.beginPath();
+                    ctx.moveTo(segment.x * segmentSize + eyeOffsetX, segment.y * segmentSize + eyeOffsetY);
+                    ctx.lineTo(segment.x * segmentSize - eyeOffsetX, segment.y * segmentSize + eyeOffsetY);
+                    ctx.stroke();
+                } else if (segment.isTail) {
+                    // Draw tail
+                    ctx.fillStyle = '#32CD32'; // Green color for the tail
+                    ctx.beginPath();
+                    ctx.arc(segment.x * segmentSize + segmentSize / 2, segment.y * segmentSize + segmentSize / 2, segmentSize / 2, 0, Math.PI);
+                    ctx.fill();
+                }
+            }
+
+            // Draw food
+            ctx.fillStyle = '#ff0000'; // Red color for the food
+            ctx.beginPath();
+            ctx.arc(food.x * segmentSize + segmentSize / 2, food.y * segmentSize + segmentSize / 2, segmentSize / 2, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function update() {
+            if (isGameOver) {
+                return;
+            }
+
+            // Update snake position
+            const head = { x: snake[0].x, y: snake[0].y };
+
+            if (direction === 'right') head.x++;
+            if (direction === 'left') head.x--;
+            if (direction === 'up') head.y--;
+            if (direction === 'down') head.y++;
+
+            snake.unshift(head);
+
+            // Check for collisions
+            if (head.x === food.x && head.y === food.y) {
+                // Snake ate the food
+                generateFood();
+            } else {
+                // Remove the tail
+                snake.pop();
+            }
+
+            // Check for game over
+            if (
+                head.x < 0 || head.x >= canvasSize / segmentSize ||
+                head.y < 0 || head.y >= canvasSize / segmentSize ||
+                checkCollision()
+            ) {
+                isGameOver = true;
+                if (confirm('Game Over! Play again?')) {
+                    restartGame();
+                }
+            }
+        }
+
+        function checkCollision() {
+            // Check if the head collides with the body
+            for (let i = 1; i < snake.length; i++) {
+                if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function generateFood() {
+            // Generate new food at a random location
+            food = {
+                x: Math.floor(Math.random() * (canvasSize / segmentSize)),
+                y: Math.floor(Math.random() * (canvasSize / segmentSize))
+            };
+        }
+
+        function keyDownHandler(e) {
+            // Handle arrow key input
+            if (e.key === 'Right' || e.key === 'ArrowRight') direction = 'right';
+            if (e.key === 'Left' || e.key === 'ArrowLeft') direction = 'left';
+            if (e.key === 'Up' || e.key === 'ArrowUp') direction = 'up';
+            if (e.key === 'Down' || e.key === 'ArrowDown') direction = 'down';
+        }
+
+        function restartGame() {
+            snake = [
+                { x: 5, y: 5, isHead: true },
+                { x: 4, y: 5 },
+                { x: 3, y: 5, isTail: true }
+            ];
+            food = { x: 15, y: 15 };
+            direction = 'right';
+            isGameOver = false;
+        }
+
+        document.addEventListener('keydown', keyDownHandler);
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvasSize, canvasSize);
+            draw();
+            update();
+        }
+
+        generateFood(); // Generate initial food
+        const gameInterval = setInterval(gameLoop, 100); // Set the game loop interval
+    </script>
+</body>
+</html>
